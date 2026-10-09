@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmed</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="brand">🔧 Campus Tech Repair</a>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">Services</a>
+        <a href="/status.html" class="nav-link">Check Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="message-banner" class="banner"></div>
+    <div id="confirmation-container"></div>
+  </main>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadConfirmation() {
+      const container = document.getElementById("confirmation-container");
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get("ref");
+
+      if (!ref) {
+        container.innerHTML = '<div class="state-container"><p>No reference number provided.</p></div>';
+        return;
+      }
+
+      container.innerHTML = '<div class="state-container"><p>Loading booking summary...</p></div>';
+
+      try {
+        const response = await fetch(`/api/bookings/${ref}`);
+        if (!response.ok) throw new Error("Booking record not found.");
+
+        const data = await response.json();
+
+        container.innerHTML = `
+          <div class="card" style="text-align: center; margin-bottom: 24px;">
+            <p style="color: var(--primary-color); font-weight: 700;">Booking Submitted!</p>
+            <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: 2px; margin: 12px 0;">${data.reference}</h1>
+            <button id="copy-btn" class="btn btn-secondary" style="margin-top: 8px;">Copy Reference Code</button>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom: 16px;">Booking Summary</h3>
+            <div class="summary-list">
+              <div class="summary-item">
+                <span class="summary-label">Status</span>
+                <span class="summary-value"><span class="badge badge-${data.status}">${data.status}</span></span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Service</span>
+                <span class="summary-value">${data.service_name}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Date & Time</span>
+                <span class="summary-value">${formatDate(data.booking_date)} at ${data.booking_time}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Devices/Items</span>
+                <span class="summary-value">${data.guests}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Customer Name</span>
+                <span class="summary-value">${data.name}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Contact</span>
+                <span class="summary-value">${data.contact}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Email</span>
+                <span class="summary-value">${data.email}</span>
+              </div>
+              ${data.notes ? `
+              <div class="summary-item">
+                <span class="summary-label">Notes</span>
+                <span class="summary-value">${data.notes}</span>
+              </div>` : ""}
+            </div>
+          </div>
+        `;
+
+        document.getElementById("copy-btn").onclick = () => {
+          navigator.clipboard.writeText(data.reference);
+          showBanner("Reference code copied to clipboard!", "success");
+        };
+
+      } catch (error) {
+        container.innerHTML = `<div class="state-container"><p style="color: var(--danger-color);">${error.message}</p></div>`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadConfirmation);
+  </script>
+</body>
+</html>
